@@ -1,0 +1,260 @@
+
+= Kurz Dockeru a Kubernetes =
+
+Toto jsou mé poznámky z kurzu Scalable Microservices with Kubernetes
+na Udacity. K tomu, co bylo v kurzu probráno, jsem
+občas doplnil i vlastní názor (je vyznačen IMO a AFAIK).
+
+== Lekce 1 (návrh moderních aplikací) ==
+
+* Motivace pro mikroslužby je zrychlení vývoje.
+  ** Př.: Když 100 lidí pracuje na jedné monolitické aplikaci a jeden člověk
+    udělá změnu, která to rozbije a zdrží nasazení aplikace o týden,
+    tak se práce 99 nedostane do produkce.
+  ** Rozdělení aplikace na menší části (mikroslužby) umožní,
+    že různé mikroslužby mohou být nasazovány různě často.
+  ** Kromě toho zbuildit jednu mikroslužbu bude trvat kratší
+    čas než zbuildit obří monolitickou aplikaci.
+* Klíčové je, že nasazování mikroslužeb nekoordinujeme!
+  ** Kdybychom to dělali, dostali bychom zpátky nevýhody
+    monolitcké aplikace.
+  ** Nutnou podmínkou je, že rozhraní mikroslužeb se
+    příliš nemění (při změně rozhraní koordinovat musíme).
+    *** IMO: Mikroslužby mají smysl, když už víme,
+      jak aplikaci rozdělit (jaké mikroslužby mají vzniknout),
+      což nejčastěji nastane, když už jsme ji vyvinuli
+      a nějakou dobu ji provozujeme.
+      Když to nevíme a rozdělíme aplikaci špatně,
+      může být refaktoring aplikace rozdělené na mikroslužby
+      komplikovanější než refaktoring monolitu
+      (důvod: často bude třeba měnit, jaké
+      mikroslužby vlastně existují nebo rozhraní mikroslužeb).
+* Nevýhody mikroslužeb:
+  ** Rozhraní mikroslužeb se nesmí často měnit -
+    jinak bychom museli koordinovat jejich nasazování
+    (takové nasazování pak může být těžší
+    než nasazování jedné monolitické aplikace).
+  ** Rozdělením aplikace na mikroslužby naroste počet komponent,
+    které je třeba spravovat a monitorovat => potřebujeme
+    nástroje, které to zautomatizují.
+  ** Volání kódu, jenž je v jiném procesu,
+    bude pomalejší než volání funkce ve stejném procesu
+    *** IMO: Toto se v kurzu nezmiňuje, ale pokud jiný proces běží
+      na jiném počítači, může se pokazit mnohem více věcí. Tj.
+      mikroslužba bude muset obsahovat logiku, která
+      ošetří chybové situace, které v monolitické aplikaci
+      neexistovaly.
+* 12 pravidel pro návrh mikroslužeb, aby byly:
+  ** Přenositelné: pravidla eliminují prvky,
+    které se liší v různých prostředích - např. závislosti
+    jsou staticky slinkované a konfigurace je v proměnných prostředí.
+  ** Snadno nasaditelné v různých cloudových prostředích
+    (např. Amazon Web Services nebo Google Cloud Engine).
+    Snadno nasaditelné mj. znamená, že jejich nasazování
+    půjde snadno zautomatizovat.
+  ** Škálovatelné.
+  ** Podrobnosti viz https://12factor.net/
+  ** IMO: Poznámky k pravidlům z https://12factor.net/
+    *** U druhého pravidla _Dependencies_ se píše, že máme
+      přesně deklarovat všechny závislosti. To je určitě dobře,
+      neboť nám to přinese opakovatelné buildy.
+        +
+      Realizace tohoto pravidla v praxi však nemusí být jednoduchá
+      kvůli tranzitivním závislostem (přijde mi, že nepřímé závislosti
+      v tom pravidlu nějak zapomněli zmínit - nicméně když je opomeneme,
+      opakovatelné buildy nemusíme dostat), které nemusí být snadné ručně vyjmenovat
+      (pro F# existuje nástroj Paket, který vytvoří soubor `paket.lock`
+      obsahující i nepřímé závislosti; tento soubor se commitne do repozitáře).
+        +
+      Navíc, když všechny závislosti přesně (tj. včetně verze) vyjmenujeme, bude
+      každá aktualizace včetně bezpečnostních aktualizací vyžadovat ruční
+      zásah do souborů, kde jsou tyto závislosti vyjmenovány
+      (což mi při větším počtu mikroslužeb nepřijde reálné).
+    *** Pravidlo _Config_ doporučuje konfiguraci uložit do proměnných prostředí.
+      **** Konfigurace je to, co se liší v různých prostředích,
+        kde aplikace beží (lokálně, dev, test, produkce).
+      **** Údajnou výhodou je, že se tím vyhneme různým konfiguračním
+        formátům a místo nich budeme používat to, co je v operačním
+        systému standardní. Jenže AFAIK proměnné prostředí dovolují ukládat
+        pouze řetězce, pokud tedy budeme chtít nějakou složitější strukturu
+        (např. pole / slovník), tak ji budeme muset nějak zakódovat do řetězce
+        (tj. konfiguračním formátům se nevyhneme).
+      **** Dále se tam říká, že konfigurace nemá být v repozitáři.
+        To se mi nelíbí - radši mám vše ke zprovoznění aplikace
+        na jednom místě.
+      **** Dále se tam nedoporučuje dělat konfiguraci pro každé
+        prostředí, kam se aplikace nasazuje (např. lokálně, dev, test, produkce).
+        Prý to neškáluje, protože postupem času je prý třeba přidávat nová
+        prostředí a údajně nastane kombinatorická exploze prostředí.
+        Přijde mi to jako nesmysl.
+    *** Zajímavý je bod _Build, release, run_, kde se doporučuje oddělit
+      tyto fáze.
+      **** Build pouze zkompiluje aplikaci (aby šla spouštět).
+      **** Release vezme to, co vytvořil build, a přidá k tomu konfiguraci
+        prostředí, kam budeme nasazovat.
+* JWT (čte se jako slovo _jot_) = JSON Web Tokens.
+  ** JSON objekt s nepovinným podpisem,
+     kde podpis je vytvořen pomocí HMAC (symetrický) nebo RSA.
+     Vše zakódované pomocí Base64url.
+  ** Použití: autentizace nebo výměna informací.
+  ** RFC 7519.
+
+== Lekce 2 (Docker) ==
+
+* Container image je balíčkovací formát, který obsahuje aplikaci
+  a všechny její závislosti.
+  ** Je to podobné jako na mobilních telefonech -- aplikace
+    si s sebou nese všechny závislosti.
+  ** IMO: Statické linkování všech závislostí by mělo zajistit,
+    že chování aplikace půjde snáze reprodukovat
+    (problémy však způsobí služby, které aplikace využívá
+    a které nejsou staticky slinkovány -- např. mohou být
+    i pod kontrolou jiného týmu).
+  ** IMO: Kurz nezmiňue nevýhody statického linkování -- např.
+    nutnost přebuildit všechny container image, když se objeví bezpečnostní
+    chyba v nějaké hodně rozšířené knihovně.
+* Docker umožňuje vytvářet, distribuovat a spouštět container image.
+* Výhody kontejnerů:
+  ** Chování aplikací jde snáze reprodukovat.
+    *** IMO: Nestačilo by pouze statické linkování bez kontejnerů?
+  ** Izolace jednotlivých aplikací (jako VM s celým OS).
+    Díky tomu můžeme např. snadno provozovat aplikace, jejichž
+    závislosti mají konflikt.
+  ** Startují rychle jako procesy (VM s celým OS startuje pomaleji).
+  ** Můžeme aplikaci spouštět na různých OS.
+* Výpis nainstalovaných imagů: `docker images`.
+* Instalace image: `docker pull nginx:1.10.0`.
+* Spuštění image: `docker run -d nginx:1.10.0`.
+  ** Image se automaticky stáhne , pokud není nainstalován.
+  ** Jeden image můžeme spustit vícekrát.
+* Výpis běžících imagů: `docker ps`.
+* Procesy běžící uvnitř imagů jsou vidět i ve výpisu `ps aux`.
+* Pomocí `docker inspect` můžeme zjistit informace o kontejneru.
+  Jako argument je třeba předat _container id_
+  z výpisu `docker ps`.
+  ** Z výstupu `docker inspect` můžeme mj. zjistit IP adresu
+    kontejneru (v _NetworkSettings_ -> _Networks_ -> _bridge_ -> _IPAddress_).
+* Kontejner zastavíme příkazem `docker stop`, kde argumentem je
+  jedno nebo více _container id_.
+* Kontejnery odstraníme příkazem `docker rm`, argumentem je opět
+  jedno nebo více _container id_.
+  ** Image zůstanou nainstalovány.
+* `Dockerfile` je skript pro vytvoření image. Může mj. obsahovat:
+  ** `FROM` -- určuje, z jakého image vytváříme náš image.
+  ** `ADD` -- přidá soubory z hosta (nebo URL)
+    do souborového systému kontejneru.
+    *** Komprimované archivy z hosta budou rozbaleny (komprimované archivy z URL ne).
+    *** IMO: Je lepší použít jednodušší `COPY`, pokud potřebujeme pouze kopírovat
+      z hosta. `COPY` neumí vzdálená URL a ani rozbalování.
+  ** `ENTRYPOINT` -- program, který se spustí při spuštění kontejneru
+    z image přes `docker run`.
+    *** IMO: Je dobré si přečíst o rozdílech mezi `ENTRYPOINT` a `CMD`,
+      o jejich společném použití a o shell vs exec form:
+      https://www.ctl.io/developers/blog/post/dockerfile-entrypoint-vs-cmd/[Dockerfile:
+      ENTRYPOINT vs CMD].
+  ** Další viz https://docs.docker.com/engine/reference/builder/[Dockerfile
+    reference].
+* Container image vytvoříme příkazem `docker build`. Např.:
+  `docker build -t name:tag path`, kde `path` určuje kontext - tj.
+  cestu, kde bude `ADD` brát soubory a kde je `Dockerfile`
+  (jinou cestu k `Dockerfile` lze určit parametrem `-f`).
+  ** Alternativně lze buildit bez kontextu a `Dockerfile`
+    načíst ze standardního vstupu: `docker build - < Dockerfile`.
+  ** Alternativně lze použít komprimovaný kontext ze standardního vstupu:
+    `docker build - < context.tar.gz`.
+* Container image můžeme sdílet nahráním do registru.
+  ** Standardní registr je `docker.io`.
+  ** Před nahráním do standardního registru je třeba přidat
+    uživatelské jméno do jména image. Např. `docker tag name:1.0.0 <your username>/name:1.0.0`.
+  ** Pak je třeba se přihlásit pomocí `docker login`.
+  ** Nakonec můžeme nahrát image `docker push <your username>/name:1.0.0`.
+  ** `docker login` i `docker push` lze použít i pro jiné registry.
+    Image je však napřed potřeba otagovat pro privátní registr -- např.:
+    `docker tag 0e5574283393 myregistryhost:5000/fedora/httpd:version1.0`.
+
+== Lekce 3 (Kubernetes)
+
+* S čím Kubernetes (K8s) pomohou:
+  ** Nastavení aplikací.
+  ** Objevení služeb.
+  ** Aktualizace.
+  ** Monitoring.
+  ** IMO: Zajímalo by mne porovnání Kubernetes s Akkou nebo s Orleans.
+* Pody:
+  ** Používáme-li Kubernetes, každý kontejner běží v Podu.
+  ** Pod reprezentuje logickou aplikaci.
+  ** Uvnitř Podu běží 1 nebo více kontejnerů.
+  ** Pod může mít volumes (disky s daty), k nimž mají přístup všechny kontejnery v Podu.
+  ** Pod má jednu IP adresu, kterou rovněž používají všechny kontejnery v Podu.
+  ** Na jeden Pod dáváme kontejnery, které by v bezkontejnerovém světě běžely
+    na stejném virtuálním nebo fyzickém stroji.
+    *** Příkladem jsou pomocné procesy aplikace (rotace logů, nahrávání logů na HDFS,
+      nahrávání událostí do Kafky).
+* Pody se vytvářejí na základě konfiguračních souboru (v YAMLu):
+  `kubectl create -f pods/nazevaplikace.yaml`.
+* Seznam Podů vypíšeme pomocí `kubectl get pods`.
+* Podrobnější informace o Podu získáme pomocí `kubectl describe pods nazevaplikace`.
+* Logy Podu zobrazíme pomocí `kubectl logs nazevaplikace`.
+* Shell v Podu spustíme pomocí `kubectl exec nazevaplikace --stdin --tty -c nazevaplikace /bin/sh`.
+* Kubernetes umí kontrolovat připravenost kontejneru obsluhovat požadavky
+  (readiness) a živost kontejneru (liveness). Pokud kontejner není připraven,
+  bude odebrán z loadbalanceru. Pokud zkouška živosti selže vícekrát za sebou,
+  bude kontejner restartován.
+  ** Kontroly se nastavují v konfiguračním souboru Podu.
+* Kubernetes umí předat konfiguraci do kontejneru přes konfigurační mapu.
+  ** Kubernetes dokáže načíst existující konfigurační soubory do konfigurační mapy
+    (alternativně lze konfigurační mapu specifikovat přímo zadáním hodnot).
+  ** Nastavení z konfigurační mapy se kontejneru předají
+    buď pomocí proměnných prostředí nebo pomocí volumes (z každého klíče
+    se vytvoří soubor, v souboru bude hodnota klíče).
+* Tajemství fungují stejně jako konfigurační mapy, ale slouží
+  pro citlivé informace.
+  ** Zatím se zdá, že mezi tajemstvími a konfiguračními mapami
+    nejsou rozdíly, v budoucnu se však mohou objevit viz
+    http://stackoverflow.com/questions/36912372/kubernetes-secrets-vs-configmaps[Kubernetes
+    Secrets vs ConfigMaps].
+* Kubernetes vytváří a likviduje Pody dynamicky (při automatickém škálování
+  nebo při aktualizaci). Pody mohou dostávat různé IP adresy =>
+  otázkou je, jak se Pod spojí s jinými Pody, na nichž závisí?
+  K tomu slouží služby.
+* Služby:
+  ** Podům můžeme přiřadit label: `kubectl label pods nazevpodu "klic=hodnota"`.
+  ** Pak vytvoříme službu, jenž zpřístupní Pody s určitými labely
+    (tj. vytvoří IP adresu, pod níž budou Pody přístupné).
+  ** IP adresu služby lze získat buď pomocí proměnných prostředí nebo přes DNS.
+* Pody s uričtými labely vypíšeme pomocí: `kubectl get pods -l "klic=hodnota"`.
+  Můžeme filtrovat i více labelů: `kubectl get pods -l "klic1=hodnota1,klic2=hodnota2"`.
+* Jaké pody jsou zpřístupněny službou získáme pomocí
+  `kubectl describe service nazevsluzby | grep Endpoints`.
+
+== Lekce 4 (Nasazování mikroslužeb) ==
+
+* Deploymenty umožňují popsat cílový stav (např. kolik replik určitého Podu má běžet).
+  Kubernetes se bude snažit tento stav udržovat (např. při změně počtu replik
+  Kubernetes automaticky vytvoří nebo ukončí Pody).
+  ** Kubernetes automaticky vyřeší na jakých nodech mají Pody běžet.
+* Deploymenty opět popisujeme soubory ve formátu YAML.
+  ** Když jsme vytvářeli jeden Pod, byl `kind: Pod`, u deploymentů
+    je `kind: Deployment`.
+  ** Konfigurace deploymentu musí obsahovat `.spec.template`,
+    což je šablona Podu (konfigurace Podu bez `kind` a bez `apiVersion`).
+  ** Počet replik se určuje pomocí `.spec.replicas`.
+* Deployment vytvoříme pomocí `kubectl create -f deployments/nazevaplikace.yaml`.
+* Další informace o deploymentu získáme pomocí `kubectl describe deployments nazevaplikace`.
+* Škálování můžeme provádět ručně:
+  ** Napřed získáme aktuální počty replik: `kubectl get replicasets`.
+  ** Pro změnu stačí upravit konfiguraci deploymentu a přenačíst ji
+    `kubectl apply -f deployments/nazevaplikace.yaml`.
+* Podrobnosti o deploymentu získáme pomocí `kubectl describe deployment nazevaplikace`.
+  ** Ve výpisu je vidět i počet replik.
+* Pro aktualizaci aplikace stačí pouze změnit použitý image v
+  konfiguraci Deploymentu. Po přenačtení konfigurace Kubernetes postupně nasadí novou aplikaci.
+
+== Zhodnocení ==
+
+Kurz je poměrně krátký (cca 4 h). Kurz představuje pouze základní
+ideje, podrobnosti je třeba nastudovat jinde (např. v materiálech odkazovaných
+ze stránek kurzu). Celkově se mi kurz líbil.
+Hlavní negativum je, že se kurz nezabývá i nevýhodami
+představovaných technologií, což je velká škoda, vzhledem k tomu,
+jací lidé ho vedou (určitě by měli, co říci).
