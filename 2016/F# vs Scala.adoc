@@ -1,0 +1,64 @@
+= F# vs Scala =
+
+F# klady oproti Scale:
+
+* Type Providers.
+  ** Scala to umí pomocí whitebox maker. Tato makra však
+    příliš dobře nefungují v prostředí IntelliJ IDEA
+    (pro každé makro je třeba napsat speciální plugin)
+    a navíc momentálně nejsou součástí scala.meta.
+* Active Patterns lze parametrizovat uvnitř `match`.
+  ** Na rozdíl od extraktorů ve Scale, kde to nejde --
+    parametrizace se musí provést před `match`
+    (parametry se předají funkci, jenž na jejich základě vrátí
+    extraktor, který je třeba uložit do proměnné).
+    V F# existuje stručnější zápis.
+* CLR podporuje eliminaci tail callů.
+  ** Ve Scale lze implementovat trampolíny. Nevýhodou trampolín je,
+    že jejich implementace není úplně jednoduchá a navíc zatěžují GC.
+* Lepší typová inference.
+  ** Typový systém Scaly je příliš silný, kvůli čemuž je těžké udělat
+    typovou inferenci jako pro Damas-Milnerův typový systém.
+  ** Navíc i lokální typová inference ve Scale je ad-hoc.
+    Např. to, kdy probíhá instanciace typových parametrů --
+    podrobnosti viz přednáška https://www.youtube.com/watch?v=YIQjfCKDR5A[Dotty
+    and types: the story so far],
+    kde Guillaume Martres mj. kritizuje scalac.
+  ** Naneštěstí ani Dotty v tomto ohledu nevypadá o mnoho lépe:
+    *** Příkladem jsou různé ad-hoc rozhodnutí, kdy se místo nejpřesnějšího
+      typu inferuje méně přesný, ale kratší typ.
+    *** Další příklad je v https://github.com/lampepfl/dotty/issues/1093[SIP:
+      Widening of case class apply to better emulate ADTs].
+      Motivací tohoto SIPu bylo pomoci typové inferenci.
+* Při programování v F# se používají mutable kolekce
+  ze standardní knihovny, zatímco Scala si vytvořila novou
+  knihovnu kolekcí (je třeba převádět mezi kolekcemi
+  ze Scaly a Javy).
+* F# má klíčové slovo `use` pro uvolňování zdrojů, když je opuštěn scope proměnné.
+  ** Ve Scale je třeba použít try-finally nebo knihovnu scala-arm.
+    Obě možnosti jsou však méně přehledné než `use` z F#.
+* Scala má velmi pokročilé vlastnosti, které jen málokdo umí použít.
+
+F# zápory oproti Scale:
+
+* V F# chybí typové třídy (nebo implicitní parametry nebo možnost
+  dodatečné implementace rozhraní).
+  ** Pozitivní je, že se uvažuje o jejich přidání --
+    viz článek http://www.mlworkshop.org/2016-7.pdf[Classes for the Masses].
+* F# jsou 2 jazyky v jednom (jeden funkcionální a jeden objektový).
+  Scala však skutečně kombinuje funkcionální i objektový přístup
+  do jednoho jazyka.
+  ** Záznamy a ani discriminated uniony v F# se nechovají jako klasické třídy.
+  ** Funkce v F# nepodporují pojmenované a nepovinné parametry,
+    metody v F# to umí.
+* Type Providers v F# neumí generovat typy na základě jiných typů.
+  ** To ve Scale jde pomocí whitebox maker.
+* Pravidla pro parsování kódu F# jsou komplikovaná.
+  ** Zejména lexikální filtrování obsahuje řadu výjimek.
+    Lidem pak např. dělá problémy chápat, proč se změní chování kódu
+    když se zvětší odsazení -- viz
+    https://github.com/Microsoft/visualfsharp/issues/1019[Different indentation
+    level changes behaviour of the code].
+* Quotationy v F# nepodporují generika.
+  ** Omezení quotationů se přenáší mj. na type providery.
+* CLR je stále příliš vázané na jednu firmu (Microsoft).
