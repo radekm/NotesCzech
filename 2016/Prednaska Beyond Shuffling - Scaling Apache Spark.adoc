@@ -1,0 +1,107 @@
+
+= Přednáška o psaní výkonných aplikací ve Sparku =
+
+Toto jsou mé poznámky z přednášky
+https://www.youtube.com/watch?v=0KGGa9qX9nw[Beyond Shuffling: Scaling Apache Spark]
+od Holden Karau ze Scala Days Berlin 2016.
+
+* Pokud RDD používáme vícekrát:
+  ** Pokud se vejde do paměti, měli bychom ho cachovat v paměti.
+  ** Jinak bychom ho měli perzistovat.
+  ** Spark nevidí celý náš program naráz a neví,
+    zda RDD budeme používat znovu => o cachování se musíme starat ručně.
+* Na sdíleném clusteru cachování nemusí fungovat spolehlivě:
+  ** Když nás někdo vytlačí z exekutorů, přijdeme i o nacachovaná data
+    (a Spark je bude muset spočítat znovu).
+  ** Řešením je checkpointování -- uložení dat na HDFS.
+  ** Před checkpointováním je třeba cachovat nebo perzistovat.
+    Checkpointování totiž všechna data z paměti zahodí.
+* Obecně preferovat `reduceByKey` a `aggregateByKey` místo `groupByKey`
+  (`groupByKey` seskupí všechny záznamy s jedním klíčem do jednoho záznamu).
+  ** `groupByKey` je bezpečné, pokud klíče mají rovnoměrné rozdělení
+    a většina klíčů je unikátních.
+    *** Rovnoměrné rozdělení nestačí, když máme jen pár klíčů, data se dostanou
+      jen mezi pár exekutorů a hrozí, že tyto exekutory přetížíme
+      (tj. výpočet může spadnout na nedostatek paměti nebo výpočet může trvat
+      dlouho, neboť na několika málo nodech se zpracovává mnohem více
+      dat než na ostatních nodech -- bude se čekat na těch pár přetížených nodů).
+    *** Je třeba dávat pozor, že transformacemi můžeme o rovnoměrné rozdělení
+      klíčů přijít (např. tím, že zavedeme `None`).
+* Má-li příliš mnoho záznamů jeden klíč, můžeme při shufflu narazit
+  na limit pro velikost partition (cca 2 GB).
+  ** Shuffle je způsoben např. `sortByKey` (není třeba volat `groupByKey`).
+  ** Řešením je přidat do klíčů náhodná data, která klíče diverzifikují.
+* Při shufflu Spark vytváří dočasné shuffle soubory.
+  ** Shuffle soubory zůstávají na nodech, dokud GC v driveru neuklidí RDD,
+    které vzniklo po shufflu.
+    *** Pokud má driver dost paměti (tj. nespouští GC), může nodům dojít místo
+      na disku, protože shuffle soubory nejsou smazány. Z tohoto důvodu
+      může chtít driver explicitně volat GC.
+  ** RDD po shufflu není třeba explicitně perzistovat na disk -- Spark
+    umí načíst data ze shuffle souborů.
+    *** Otázka: Pokud bychom chtěli RDD ponechat v paměti,
+      je asi třeba explicitně nacachovat RDD do paměti?
+* Při transformacích iterátor na iterátor
+  (např. v `mapPartitions` nebo `mapPartitionsWithIndex`) je třeba dávat pozor,
+  abychom nevynutili načtení všech dat do paměti.
+  ** Spark umí zpracovávat partitiony, které se nevejdou do paměti.
+
+Spark SQL:
+
+* DataFrame API.
+* Výhody Spark SQL:
+  ** Superrychlá serializace, která je navíc prostorově úspornější.
+  ** Některé operace jde provádět přímo na serializovaných hodnotách
+    (např. třídění).
+  ** Používání RDD z jazyků mimo JVM vyžaduje extra serializaci, používání DataFramů ne.
+  ** Umí protlačit operace (např. filter) k úložišti dat.
+  ** Optimalizátor se dívá do našich výrazů (např. se kouká do těl lambda funkcí
+    a podle toho dělá optimalizace; zatímco pro RDD je lambda funkce black box).
+* Nevýhody Spark SQL:
+  ** Nefunguje dobře pro iterativní algoritmy (např. strojové učení).
+    *** Problémy nastávají při optimalizaci dlouhého řetězce operací. Řešením tedy je
+      tento řetězec operací přerušit:
++
+[source,scala]
+----
+def cutLineage(df: DataFrame): DataFrame = {
+  val sqlCtx = df.sqlContext
+  val rdd = df.rdd
+  rdd.cache()
+  sqlCtx.createDataFrame(rdd, df.schema)
+}
+----
+Data proženeme přes RDD, což přeruší řetězec operací.
+  ** Protlačení operace k úložišti dat někdy nefunguje.
+  ** Standardní velikost shufflu je příliš malá (200 partitionů) pro velká data.
+* DataSet API:
+  ** Staticky typovaný DataFrame.
+  ** Můžeme mixovat relační a funkcionální styl programování.
+    *** Nemusíme psát vlastní UDF -- můžeme mixovat lambda funkce a SQL
+      podle toho, kde se co hodí.
+
+Testování a validování Spark jobů:
+
+* Motivace pro validování: Testování nás nezachrání, když se např. v produkci
+  změní formát dat, která job zpracovává
+  (testy budou procházet, protože tam se nic nezměnilo).
+* Validování se spustí po skočení jobu a na základě určitých statistik
+  se pokusí ověřit, zda job fungoval korektně.
+* Co lze kontrolovat při validaci:
+  ** Velikost výstupu je podobná jako při minulých bězích.
+  ** Počet neplatných záznamů na vstupu je nízký nebo jejich procento
+    je blízké procentu z minulých běhů.
+  ** Job běžel podobný čas jako minule.
+  ** Počet záznamů na vstupu roste s každým během.
+* Pro validaci lze používat akumulátory ve Sparku.
+  ** Je třeba si dát pozor na to, že při přepočítání dat (např. kvůli ztrátě nodu)
+    se statistiky do akumulátoru započítají vícekrát.
+    *** Často stačí, když jsou pravidla pro validaci relativní (absolutní pravidlo
+      _počet neplatných záznamů je menší než 1000_ můžeme nahradit relativním
+      pravidlem _počet neplatných záznamů je menší než 1 %_).
+  ** Na opravě akumulátorů se pracuje.
+* Knihovna spark-validator -- zatím není vhodné pro produkční nasazení.
+* Když výsledky jobu neprojdou validací, spočtená data by se neměla používat
+  v produkci.
+  ** Pokud data nezahodíme, lze umožnit ruční schválení dat pro nasazení v produkci.
+* Pro testování lze použít knihovny typu QuickCheck: sscheck nebo spark-testing-base.
