@@ -3,10 +3,19 @@
 F# klady oproti Scale:
 
 * Type Providers.
-  ** Scala to umí pomocí whitebox maker. Tato makra však
-    příliš dobře nefungují v prostředí IntelliJ IDEA
-    (pro každé makro je třeba napsat speciální plugin)
-    a navíc momentálně nejsou součástí scala.meta.
+  ** Ve Scale jsou nejblíže whitebox makra.
+    *** Není však zřejmé, jak pomocí whitebox maker uspokojivě vyřešit situaci,
+      kdy aplikace využívá jen zlomek z obrovského množství typů,
+      které TP poskytuje. V ideálním případě by měl kompilátor pracovat
+      pouze s využívanými typy, nikoliv se všemi poskytovanými typy.
+    *** Nevýhodou whitebox maker je, že příliš dobře nefungují v prostředí IntelliJ IDEA
+      (pro každé makro je třeba napsat speciální plugin -- viz
+      https://blog.jetbrains.com/scala/2015/10/14/intellij-api-to-build-scala-macros-support/[IntelliJ
+      API to Build Scala Macros Support])
+      a že momentálně nejsou součástí scala.meta.
+  ** Potenciální nevýhodou TP je, že mohou generovat typy z dat
+    mimo repozitář projektu, což může vést k nereplikovatelným buildům.
+* `let` v F# není rekurzivní na rozdíl od `def` nebo `val` ve Scale.
 * Active Patterns lze parametrizovat uvnitř `match`.
   ** Na rozdíl od extraktorů ve Scale, kde to nejde --
     parametrizace se musí provést před `match`
@@ -16,6 +25,10 @@ F# klady oproti Scale:
 * CLR podporuje eliminaci tail callů.
   ** Ve Scale lze implementovat trampolíny. Nevýhodou trampolín je,
     že jejich implementace není úplně jednoduchá a navíc zatěžují GC.
+  ** Eliminace tail callů v F# má určitá omezení --
+    například pro funkce, jenž vrací `unit`. Podrobnosti viz
+    https://blogs.msdn.microsoft.com/fsharpteam/2011/07/08/tail-calls-in-f/[Tail
+    calls in F#].
 * Lepší typová inference.
   ** Typový systém Scaly je příliš silný, kvůli čemuž je těžké udělat
     typovou inferenci jako pro Damas-Milnerův typový systém.
@@ -34,9 +47,20 @@ F# klady oproti Scale:
   ze standardní knihovny, zatímco Scala si vytvořila novou
   knihovnu kolekcí (je třeba převádět mezi kolekcemi
   ze Scaly a Javy).
+* Lepší enumy.
+* Není třeba psát `new`.
 * F# má klíčové slovo `use` pro uvolňování zdrojů, když je opuštěn scope proměnné.
   ** Ve Scale je třeba použít try-finally nebo knihovnu scala-arm.
     Obě možnosti jsou však méně přehledné než `use` z F#.
+* F# nemá implicitní konverze.
+  ** Ve Scale často vedou na elegantní, ale těžko srozumitelný kód.
+    *** Např. knihovna http4s umožňuje psát `Ok("Hello!")`,
+      ačkoliv `Ok` nejde aplikovat na žádný argument.
+      Překlad však uspěje díky implicitní konverzi `OkSyntax(Ok)("Hello!")`.
+      Navíc je psaní kódu méně pohodlné, neboť IntelliJ IDEA
+      napovídá parametry pro `Ok` (nikoliv pro `OkSyntax(Ok)`),
+      jenže `Ok` žádné parametry nemá.
+  ** Jedním z důsledků je lepší typová inference.
 * Scala má velmi pokročilé vlastnosti, které jen málokdo umí použít.
 
 F# zápory oproti Scale:
@@ -62,3 +86,54 @@ F# zápory oproti Scale:
 * Quotationy v F# nepodporují generika.
   ** Omezení quotationů se přenáší mj. na type providery.
 * CLR je stále příliš vázané na jednu firmu (Microsoft).
+* Scala má higher-kinded typy.
+  ** Pro jejich vyjádření v F# můžeme použít defunkcionalizaci. Příklad z knihovny
+    https://github.com/palladin/Higher[Higher]:
++
+[source,fsharp]
+----
+// Represents type application.
+// To ensure type-safety we use a secret token based control access policy.
+type App<'F, 'T> (token : 'F, value : obj) =
+    do
+        if Object.ReferenceEquals(token, Unchecked.defaultof<'F>) then
+            raise <| InvalidOperationException "Invalid token"
+
+    // Apply the secret token to have access to the encapsulated value.
+    member __.Apply(token' : 'F) =
+        if Object.ReferenceEquals(token, token')
+        then value
+        else raise <| InvalidOperationException "Invalid token"
+
+[<AbstractClass>]
+type Functor<'F>() =
+    abstract Map<'A, 'B> : ('A -> 'B) -> App<'F, 'A> -> App<'F, 'B>
+
+type List private () =
+    static let token = List()
+    static member Inj (value : 'T list) : App<List, 'T> =
+        App<_, _>(token, value)
+    static member Prj (app : App<List, 'T>) : 'T list =
+        app.Apply(token) :?> _
+
+type ListFunctor() =
+    inherit Functor<List>()
+
+    override __.Map f x = x |> List.Prj |> List.map f |> List.Inj
+----
+Pomocí tokenu je zajištěno, že instance `App<List, 'T>` může vytvářet pouze `List.Inj`
+(k vytvoření je třeba token -- tj. hodnota typu `List`, která není `null`)
+a rozbalovat je může pouze `List.Prj`.
+* Horší build systémy.
+* Z funkce definované v těle třídy nebo metody nejde volat
+  `private` a `protected` metody.
+
+Nejasné, zda se jedná o klad nebo o zápor F#:
+
+* F# nemá modifikátor přístupu `protected`.
+  ** Nebývá potřeba.
+* F# nemá makra.
+  ** Některé z výhod maker přinášejí type providers.
+  ** Stojí zbylé výhody maker za zkomplikování jazyka nebo je lepší
+    zjistit, co dalšího makra přinášejí oproti type providers,
+    a nejpřínosnější věci implementovat přímo do jazyka?
