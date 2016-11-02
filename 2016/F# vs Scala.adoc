@@ -16,6 +16,10 @@ F# klady oproti Scale:
   ** Potenciální nevýhodou TP je, že mohou generovat typy z dat
     mimo repozitář projektu, což může vést k nereplikovatelným buildům.
 * `let` v F# není rekurzivní na rozdíl od `def` nebo `val` ve Scale.
+* U pattern matchingu v F# kompilátor kontroluje, zda vzory pokrývají všechny možnosti.
+  Kontrola pokrytí funguje i při použití Active Patterns.
+  ** Ve Scale je kontrola pokrytí velmi omezená -- k jejímu vypnutí stačí použít `case`
+    obsahující `if`. Dotty kontrolu pokrytí zlepšil, ale stále nefunguje s extraktory.
 * Active Patterns lze parametrizovat uvnitř `match`.
   ** Na rozdíl od extraktorů ve Scale, kde to nejde --
     parametrizace se musí provést před `match`
@@ -29,20 +33,8 @@ F# klady oproti Scale:
     například pro funkce, jenž vrací `unit`. Podrobnosti viz
     https://blogs.msdn.microsoft.com/fsharpteam/2011/07/08/tail-calls-in-f/[Tail
     calls in F#].
+* CLR podporuje uživatelsky definované hodnotové typy.
 * Lepší typová inference.
-  ** Typový systém Scaly je příliš silný, kvůli čemuž je těžké udělat
-    typovou inferenci jako pro Damas-Milnerův typový systém.
-  ** Navíc i lokální typová inference ve Scale je ad-hoc.
-    Např. to, kdy probíhá instanciace typových parametrů --
-    podrobnosti viz přednáška https://www.youtube.com/watch?v=YIQjfCKDR5A[Dotty
-    and types: the story so far],
-    kde Guillaume Martres mj. kritizuje scalac.
-  ** Naneštěstí ani Dotty v tomto ohledu nevypadá o mnoho lépe:
-    *** Příkladem jsou různé ad-hoc rozhodnutí, kdy se místo nejpřesnějšího
-      typu inferuje méně přesný, ale kratší typ.
-    *** Další příklad je v https://github.com/lampepfl/dotty/issues/1093[SIP:
-      Widening of case class apply to better emulate ADTs].
-      Motivací tohoto SIPu bylo pomoci typové inferenci.
 * Při programování v F# se používají mutable kolekce
   ze standardní knihovny, zatímco Scala si vytvořila novou
   knihovnu kolekcí (je třeba převádět mezi kolekcemi
