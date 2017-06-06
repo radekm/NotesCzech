@@ -3,44 +3,41 @@
 
 = Umění =
 
-* kytara (3x týdně 20 min)
-* storytelling, psaní příběhů, psaní poezie (3x týdně 20 min)
-* trénink improvizačního divadla (1x týdně 180 min)
-* kreslení (3x týdně 20 min)
+* rytmus (3x týdne 5 min)
+* kytara (3x týdně 30 min)
+* storytelling (2x týdně 45 min)
+  ** číst příběhy, sledovat filmy, detailně si představovat obrazy příběhů,
+    klást kauzální otázky, vyprávět příběhy
+  ** trénovat slovní zásobu, asociace, neasociace
 
 = Společenské dovednosti =
 
 * smysl pro humor (4x týdně 60 min)
-  ** chodit na improvizační divadlo, stand-up komedie a slam poetry
   ** sledovat vtipné filmy a seriály (a všímat si, co je vtipné a proč)
   ** číst vtipné knihy (a všímat si, co je vtipné a proč)
-* salsa (1x týdně 90 min)
 * číst o lidských vztazích, lidském chování, verbální a neverbální komunikaci
   (6x týdně 45 min)
 * sejít se s kamarády (1x týdně 120 min)
 
 = Sporty =
 
-* bruslení (1x týdně 90 min)
-* kettlebell (2x týdně 45 min)
-* procvičení (3x týdně 45 min)
-* běh (1x týdně 30 min)
-* squash (1x týdně 60 min)
+* procvičení (2x týdně 45 min)
+* běh (2x týdně 30 min)
+* badminton (1x týdně 60 min)
+* kolo (1x týdně 45 min)
 
 = Akademické znalosti a všeobecný přehled =
 
 * nastudovat si nové téma (1x týdně 120 min)
   ** každý týden jiné téma
 * japonština (4x týdně 15 min)
-* číst mangu (4x týdně 20 min)
+* číst mangu (4x týdně 15 min)
+* kouknout na film (1x týdně)
+* sledovat, co se právě děje ve světě
 
 = Praktické dovednosti =
 
-* řízení auta (1x týdně 90 min)
-* mužské práce (1x týdně 180 min)
-  ** kurzy v dílně DIY (práce s kovy, se dřevem)
-  ** naučit se pracovat s nářadím, různými nástroji a přístroji
-  ** naučit se opravit věci v bytě, domě, autě a na zahradě
+* řízení auta (1x týdně 60 min)
 
 = Různé =
 
@@ -52,30 +49,40 @@
 Umění
 
 * flétna
+* buben
 * zpěv
-* pantomima
+* stand-up komedie
+* poezie
 
 Společenské dovednosti
 
-* tance: swing, disco, tango
+* tance: salsa, swing, disco, tango, irské, hip hop
 
 Sporty
 
-* kolo, koloběžka, jednokolka
-* raketové: badminton, speedminton, stolní tenis
-* týmové: volejbal, inline hokej, floorbal, frisbee
-* zimní: lední brusle, běžky, sjezdové lyže, snowboard, sněžnice
-* vodní: wakeboard, kiting na vodě, plavání, sjíždění řek (kanoe, raft),
+* koloběžka, jednokolka
+* raketové: squash, speedminton, stolní tenis
+* týmové: volejbal, frisbee
+* zimní: lední brusle, běžky, sjezdové lyže, snowboard, sněžnice, skialpinismus
+* vodní: wakeboard, kiting na vodě, plavání, skoky do vody, sjíždění řek (kanoe, raft),
   ovládání plachetnice
-* bojová umění: aikido, praktická metoda tajči
-* různé: lezení na umělé stěně, lezení venku, jízda na koni, střelba, lov,
-  CrossFit, akrojóga, slackline
+* bojová umění: Muay Thai, jiu-jitsu
+* různé: bruslení, lezení na umělé stěně, jízda na koni, střelba, lov,
+  kettlebell, CrossFit, jóga, akrojóga, slackline, orientační běh, šerm
 
 Praktické dovednosti
 
+* mužské práce
+  ** kurzy v dílně DIY (práce s kovy, se dřevem)
+  ** naučit se pracovat s nářadím, různými nástroji a přístroji
+  ** naučit se opravit věci v bytě, domě, autě a na zahradě
+* masáže
 * řízení auta v krizových situacích
 * ježdění na motorce
-
-Různé
-
-* vzdělat se, abych mohl pracovat se zvířaty (např. zoologie) nebo s dětmi
+* vaření
+* farmaření
+  ** pěstování rostlin
+  ** starání se o zvířata
+* práce s dětmi
+* práce se zvířaty
+* první pomoc
