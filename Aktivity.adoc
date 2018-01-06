@@ -13,20 +13,20 @@
     klást kauzální otázky, vyprávět příběhy
   ** trénovat slovní zásobu, asociace, neasociace
 * stand-up komedie
-* skládat a recitovat básně
 * zlepšit artikulování
 
 == Společenské dovednosti ==
 
 * smysl pro humor
+  ** formální rozbor vtipů -- zejména, jak funguje klasický vtip
+  ** naučit se algoritmy pro tvorbu vtipů
   ** sledovat vtipné filmy a seriály (a všímat si, co je vtipné a proč)
   ** číst vtipné knihy (a všímat si, co je vtipné a proč)
   ** číst vtipy (a všímat si, co je vtipné a proč)
-  ** číst slovní hříčky a zkoušet vytvářet vlastní
 * číst o lidských vztazích, lidském chování, verbální a neverbální komunikaci
   ** nezapomínat na praxi
 * charisma
-* tance: salsa, swing, disco, tango, irské, hip hop
+* tance: salsa, swing, disco, tango, irské, hip hop, klasické
 
 == Akademické znalosti a všeobecný přehled ==
 
@@ -67,3 +67,18 @@
 * práce se zvířaty
 * první pomoc
 * smát se
+
+== Povolání ==
+
+* programátor v OCamlu
+* učitel ve školce
+* spisovatel
+* učitel angličtiny v Japonsku
+* model v Japonsku
+* herec v Japonsku
+* učitel japonštiny v ČR
+* masér
+* barista
+* komik
+* učitel tance
+* ošetřovatel slonů a lvů v Africe
